@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -32,11 +34,17 @@ body {
 }
 
 h1 {
+  @apply text-white text-5xl font-bold text-center;
   font-size: 3.2em;
   line-height: 1.1;
 }
 
+p {
+  @apply text-white mt-2 text-lg text-center;
+}
+
 button {
+  @apply mt-6 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg shadow-lg;
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
