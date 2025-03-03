@@ -1,0 +1,1170 @@
+/* Interactive Map*/
+.map-holder {
+    background: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Centers content if needed */
+}
+
+/* Rectangle 73 */
+.rectangle-73{
+    position: absolute;
+    width: 3000px;
+    height: 90px;
+    left: 0px;
+    top: 0px;
+
+    background: #F5F5F5;
+}
+
+/* Rectangle 72 */
+.rectangle-72{
+    position: absolute;
+    width: 200px;
+    height: 50px;
+    left: 25px;
+    top: 949px;
+
+    background: #FFFFFF;
+    box-shadow: 0px 4px 8px rgba(150, 150, 150, 0.25);
+    border-radius: 15px;
+}
+
+/* Rectangle 71 */
+.rectangle-71{
+    position: absolute;
+    width: 500px;
+    height: 50px;
+    left: calc(50% - 500px/2);
+    top: 20px;
+
+    background: #FFFFFF;
+    box-shadow: 0px 4px 8px rgba(150, 150, 150, 0.25);
+    border-radius: 10px;
+}
+
+/* Rectangle 70 */
+.rectangle-70{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 42px;
+    left: 1351px;
+    top: 622px;
+
+    background: #8AD70E;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 69 */
+.rectangle-69{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 42px;
+    left: 1351px;
+    top: 664px;
+
+    background: #90EE90;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 68 */
+.rectangle-68{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 42px;
+    left: 1351px;
+    top: 706px;
+
+    background: #006600;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 67 */
+.rectangle-67{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 42px;
+    left: 1351px;
+    top: 580px;
+
+    background: #F07474;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 66 */
+.rectangle-66{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 42px;
+    left: 1351px;
+    top: 538px;
+
+    background: #319900;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 65 */
+.rectangle-65{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 35px;
+    left: 1351px;
+    top: 455px;
+
+    background: #F07474;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 64 */
+.rectangle-64{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 35px;
+    left: 1351px;
+    top: 420px;
+
+    background: #90EE90;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 63 */
+.rectangle-63{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 35px;
+    left: 1351px;
+    top: 385px;
+
+    background: #8AD70E;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 62 */
+.rectangle-62{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 35px;
+    left: 1351px;
+    top: 350px;
+
+    background: #66CC00;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 61 */
+.rectangle-61{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 35px;
+    left: 1351px;
+    top: 315px;
+
+    background: #319900;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 60 */
+.rectangle-60{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 35px;
+    left: 1351px;
+    top: 280px;
+
+    background: #006600;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 59 */
+.rectangle-59{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 35px;
+    left: 1351px;
+    top: 245px;
+
+    background: #90EE90;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 58 */
+.rectangle-58{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 35px;
+    left: 1351px;
+    top: 210px;
+
+    background: #F07474;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 57 */
+.rectangle-57{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 38.4px;
+    height: 35px;
+    left: 1151px;
+    top: 129px;
+
+    background: #F07474;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 56 */
+.rectangle-56{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 38.4px;
+    height: 35px;
+    left: 1189px;
+    top: 129px;
+
+    background: #319900;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 55 */
+.rectangle-55{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 38.4px;
+    height: 35px;
+    left: 1113px;
+    top: 129px;
+
+    background: #90EE90;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 54 */
+.rectangle-54{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 38.4px;
+    height: 35px;
+    left: 1075px;
+    top: 129px;
+
+    background: #8AD70E;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 53 */
+.rectangle-53{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 38.4px;
+    height: 35px;
+    left: 1037px;
+    top: 129px;
+
+    background: #66CC00;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 52 */
+.rectangle-52{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 32px;
+    height: 70.01px;
+    left: 877px;
+    top: 129px;
+
+    background: #66CC00;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 51 */
+.rectangle-51{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 121.59px;
+    height: 429.84px;
+    left: 657px;
+    top: 304px;
+
+    background: #006600;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 50 */
+.rectangle-50{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 95.99px;
+    height: 56px;
+    left: 1163px;
+    top: 538px;
+
+    background: #8AD70E;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 49 */
+.rectangle-49{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 48px;
+    height: 109.21px;
+    left: 1163px;
+    top: 594px;
+
+    background: #66CC00;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 48 */
+.rectangle-48{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 48px;
+    height: 109.21px;
+    left: 1210px;
+    top: 594px;
+
+    background: #F07474;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 47 */
+.rectangle-47{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 319.98px;
+    height: 350.03px;
+    left: 813px;
+    top: 349px;
+
+    background: #90EE90;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 46 */
+.rectangle-46{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 32px;
+    height: 70.01px;
+    left: 845px;
+    top: 129px;
+
+    background: #F07474;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 45 */
+.rectangle-45{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 32px;
+    height: 35px;
+    left: 813px;
+    top: 129px;
+
+    background: #F07474;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 44 */
+.rectangle-44{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 32px;
+    height: 35px;
+    left: 781px;
+    top: 129px;
+
+    background: #90EE90;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 42 */
+.rectangle-42{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 32px;
+    height: 35px;
+    left: 749px;
+    top: 129px;
+
+    background: #F07474;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 41 */
+.rectangle-41{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 32px;
+    height: 35px;
+    left: 717px;
+    top: 129px;
+
+    background: #66CC00;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 40 */
+.rectangle-40{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 32px;
+    height: 35px;
+    left: 685px;
+    top: 129px;
+    
+    background: #319900;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 39 */
+.rectangle-39{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 32px;
+    height: 35px;
+    left: 650.88px;
+    top: 129.22px;
+    
+    background: #006600;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 38 */
+.rectangle-38{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 70.01px;
+    left: 529px;
+    top: 129px;
+    
+    background: #66CC00;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 37 */
+.rectangle-37{
+    position: absolute;
+    width: 32.16px;
+    height: 813.29px;
+    left: 605.9px;
+    top: 126.93px;
+    
+    background: linear-gradient(180deg, #FFFFFF 0%, #D6D8D9 5%, #D6D8D9 95%, #FFFFFF 100%);
+}
+
+/* Rectangle 36 */
+.rectangle-36{
+    position: absolute;
+    width: 12.8px;
+    height: 315.03px;
+    left: 1142.38px;
+    top: 538.05px;
+    
+    background: rgba(153, 157, 160, 0.4);
+    border-radius: 25px 25px 0px 0px;
+}
+
+/* Rectangle 35 */
+.rectangle-35{
+    position: absolute;
+    width: 12.8px;
+    height: 548.85px;
+    left: 785.28px;
+    top: 304.23px;
+    
+    background: rgba(153, 157, 160, 0.4);
+    border-radius: 25px 25px 0px 0px;
+}
+
+/* Rectangle 34 */
+.rectangle-34{
+    position: absolute;
+    width: 12.8px;
+    height: 186.22px;
+    left: 1266.53px;
+    top: 538.05px;
+    
+    background: rgba(153, 157, 160, 0.4);
+    border-radius: 25px 25px 0px 0px;
+}
+
+/* Rectangle 33 */
+.rectangle-33{
+    position: absolute;
+    width: 684px;
+    height: 35px;
+    left: 638px;
+    top: 233px;
+    
+    background: rgba(153, 157, 160, 0.4);
+    border-radius: 0px 18px 0px 0px;
+}
+
+/* Rectangle 32 */
+.rectangle-32{
+    position: absolute;
+    width: 344.3px;
+    height: 14px;
+    left: 798.08px;
+    top: 710.27px;
+    
+    background: rgba(153, 157, 160, 0.4);
+    border-radius: 0px;
+}
+
+/* Rectangle 31 */
+.rectangle-31{
+    position: absolute;
+    width: 111.35px;
+    height: 14px;
+    left: 1155.17px;
+    top: 710.27px;
+    
+    background: rgba(153, 157, 160, 0.4);
+    border-radius: 0px;
+}
+
+/* Rectangle 30 */
+.rectangle-30{
+    position: absolute;
+    width: 344.3px;
+    height: 14px;
+    left: 798.08px;
+    top: 839.08px;
+    
+    background: rgba(153, 157, 160, 0.4);
+    border-radius: 0px;    
+}
+
+/* Rectangle 29 */
+.rectangle-29{
+    position: absolute;
+    width: 33px;
+    height: 674px;
+    left: 1289px;
+    top: 267px;
+    
+    background: linear-gradient(180deg, #D6D8D9 94.51%, #FFFFFF 100%);
+    border-radius: 0px;
+}
+
+/* Rectangle 28 */
+.rectangle-28{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 44.8px;
+    height: 49px;
+    left: 813px;
+    top: 733px;
+    
+    background: #319900;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 27 */
+.rectangle-27{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 44.8px;
+    height: 49px;
+    left: 813.43px;
+    top: 781.67px;
+    
+    background: #66CC00;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 26 */
+.rectangle-26{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 44.8px;
+    height: 49px;
+    left: 858px;
+    top: 782px;
+    
+    background: #8AD70E;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 25 */
+.rectangle-25{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 44.8px;
+    height: 49px;
+    left: 903px;
+    top: 782px;
+    
+    background: #90EE90;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 24 */
+.rectangle-24{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 44.8px;
+    height: 49px;
+    left: 948px;
+    top: 782px;
+    
+    background: #006600;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 23 */
+.rectangle-23{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 44.8px;
+    height: 49px;
+    left: 993px;
+    top: 782px;
+    
+    background: #319900;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 22 */
+.rectangle-22{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 44.8px;
+    height: 49px;
+    left: 1037px;
+    top: 782px;
+    
+    background: #F07474;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 21 */
+.rectangle-21{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 44.8px;
+    height: 49px;
+    left: 1082px;
+    top: 782px;
+    
+    background: #F07474;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 20 */
+.rectangle-20{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 44.8px;
+    height: 49px;
+    left: 858.23px;
+    top: 732.67px;
+    
+    background: #66CC00;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 19 */
+.rectangle-19{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 44.8px;
+    height: 49px;
+    left: 903px;
+    top: 733px;
+    
+    background: #8AD70E;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;    
+}
+
+/* Rectangle 18 */
+.rectangle-18{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 44.8px;
+    height: 49px;
+    left: 992.62px;
+    top: 732.67px;
+    
+    background: #F07474;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 17 */
+.rectangle-17{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 89.59px;
+    height: 49px;
+    left: 1037px;
+    top: 733px;
+    
+    background: #319900;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;    
+}
+
+/* Rectangle 16 */
+.rectangle-16{
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 44.8px;
+    height: 49px;
+    left: 948px;
+    top: 733px;
+    
+    background: #90EE90;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 15 */
+.rectangle-15 {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 104.31px;
+    height: 70.01px;
+    left: 424.34px;
+    top: 129.22px;
+    
+    background: #319900;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;    
+}
+
+/* Rectangle 14 */
+.rectangle-14 {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 44.8px;
+    height: 70.01px;
+    left: 380px;
+    top: 129px;
+    
+    background: #006600;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 13 */
+.rectangle-13 {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 44.8px;
+    height: 70.01px;
+    left: 335px;
+    top: 129px;
+    
+    background: #90EE90;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 12 */
+.rectangle-12 {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 70.01px;
+    left: 271px;
+    top: 129px;
+
+    background: #8AD70E;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 11 */
+.rectangle-11 {
+
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 70.01px;
+    left: 206.31px;
+    top: 129.22px;
+    
+    background: #F07474;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 10 */
+.rectangle-10 {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 70.01px;
+    left: 141px;
+    top: 129px;
+
+    background: #319900;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 9 */
+.rectangle-9 {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 64px;
+    height: 35px;
+    left: 76px;
+    top: 129px;
+
+    background: #006600;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 8 */
+.rectangle-8 {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 32px;
+    height: 105.01px;
+    left: 25px;
+    top: 164px;
+
+    background: #90EE90;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 7 */
+.rectangle-7 {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 32px;
+    height: 70.01px;
+    left: 1005px;
+    top: 128px;
+
+    background: #319900;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 6 */
+.rectangle-6 {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 32px;
+    height: 70.01px;
+    left: 973px;
+    top: 129px;
+
+    background: #006600;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 5 */
+.rectangle-5 {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 32px;
+    height: 70.01px;
+    left: 941px;
+    top: 129px;
+
+    background: #90EE90;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 4 */
+.rectangle-4 {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 32px;
+    height: 70.01px;
+    left: 909.43px;
+    top: 129.22px;
+
+    background: #8AD70E;
+    border: 1px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+/* Rectangle 3 */
+.rectangle-3 {
+    position: absolute;
+    width: 140.79px;
+    height: 70.01px;
+    left: 1228px;
+    top: 129px;
+
+    background: #66CC00;
+    border-radius: 5px;
+}
+
+/* Rectangle 2 */
+.rectangle-2 {
+    position: absolute;
+    width: 525px;
+    height: 11px;
+    left: 81px;
+    top: 209px;
+
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.4) 0%, rgba(153, 157, 160, 0.4) 10%);
+    border-radius: 0px;
+}
+
+/* Rectangle 1 */
+.rectangle-1 {
+    position: absolute;
+    width: 400px;
+    height: 600px;
+    left: 120px;
+    top: 281px;
+
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 9px;
+}
+
+/* Entrance/Exit (Entrance for Vehicles) */
+.vehicle-entrance{
+    position: absolute;
+    width: 201.55px;
+    height: 57.78px;
+    left: calc(50% - 201.55px/2 + 586.24px);
+    top: 941.22px;
+
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 24px;
+    text-align: center;
+    letter-spacing: 0.01em;
+
+    color: #1F1C15;
+}
+
+
+
+/* Entrance/Exit (Exit for Vehicles) */
+.vehicle-exit{
+    position: absolute;
+    width: 154.29px;
+    height: 57.78px;
+    left: calc(50% - 154.29px/2 - 98.16px);
+    top: 939.08px;
+
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 24px;
+    text-align: center;
+    letter-spacing: 0.01em;
+
+    color: #1F1C15;
+}
+
+
+.search-bar{
+    position: absolute;
+    width: 211px;
+    height: 24px;
+    left: calc(50% - 211px/2 - 79.5px);
+    top: 33px;
+
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 24px;
+    /* identical to box height */
+    text-align: center;
+    letter-spacing: 0.01em;
+
+    color: #A6A6A6;
+}
+
+/* To VSU Lower Campus */
+.lower-campus{
+    position: absolute;
+    width: 198.77px;
+    height: 28.89px;
+    left: calc(50% - 198.77px/2 - 97.61px);
+    top: 100px;
+
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 24px;
+    text-align: center;
+    letter-spacing: 0.01em;
+
+    color: #1F1C15;
+}
+
+
+/* Community Chat Button */
+.community-chat{
+    position: absolute;
+    width: 142px;
+    height: 24px;
+    left: 54px;
+    top: 962px;
+
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 24px;
+    /* identical to box height */
+
+    color: #1E1C14;
+}
+
+/* Visita Text */
+.visita{
+    position: absolute;
+    width: 92px;
+    height: 45px;
+    left: 25px;
+    top: 23px;
+
+    font-family: 'Outfit';
+    font-style: normal;
+    font-weight: 500;
+    font-size: 36px;
+    line-height: 45px;
+
+    color: #1F1C15;
+}
+
+/* Account Container */
+.account-container{
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    left: 1355px;
+    top: 15px;
+
+    background: url(Acc.jpg);
+    border-radius: 25px;
+}
