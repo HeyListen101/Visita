@@ -18,19 +18,21 @@
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: #696047;
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: #57503A;
 }
 
-body {
-  margin: 0;
+/* If using a container */
+.container {
   display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 90vw; /* Prevents oversized content */
+  padding: 20px;
 }
 
 h1 {
@@ -44,20 +46,21 @@ p {
 }
 
 button {
-  @apply mt-6 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg shadow-lg;
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #696047;
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 button:hover {
-  border-color: #646cff;
+  border-color: rgb(128, 115, 81);
 }
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
@@ -74,4 +77,18 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 12px;
+  border: 1px solid gray;
+  border-radius: 6px;
+  outline: none; /* Removes default browser outline */
+}
+
+input:focus {
+  border-color: blue;
+  outline: 2px solid blue; /* Adds a custom outline */
 }
