@@ -1,11 +1,15 @@
-import backgroundImage from "../assets/background-images/LandingPage.png";
 import { Link } from "react-router-dom";
 
 function LandingPage() {
   return (
     <div
       className="fixed inset-0 flex items-center justify-center bg-cover bg-center overflow-hidden"
-      style={{ backgroundImage: "url('https://www.eduopinions.com/wp-content/uploads/2017/09/Visayas-State-University-VSU-campus.jpg')" }}
+      style={{ 
+        backgroundImage: "url('https://www.eduopinions.com/wp-content/uploads/2017/09/Visayas-State-University-VSU-campus.jpg')",
+        backgroundSize: "100% 100%",
+        width: "100vw",
+        height: "100vh",
+      }}
     >
       <div className="bg-white p-8 rounded-xl shadow-lg w-96 flex flex-col items-center">
         <h2 className="text-xl font-bold mb-4 text-black">Log In</h2>
@@ -13,13 +17,13 @@ function LandingPage() {
         {/* Styled Inputs */}
         <input
           type="email"
-          placeholder="Email address"
-          className="w-full p-2 mb-3 border border-gray-400 rounded-md focus:border-blue-600 focus:outline-blue-600"
+          placeholder="Email Address"
+          className="styled-inputs"
         />
         <input
           type="password"
           placeholder="Password"
-          className="w-full p-2 mb-3 border border-gray-400 rounded-md focus:border-blue-600 focus:outline-blue-600"
+          className="styled-inputs"
         />
 
         {/* Sign-up and Forgot Password Links */}

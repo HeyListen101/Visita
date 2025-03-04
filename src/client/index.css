@@ -89,6 +89,10 @@ input {
 }
 
 input:focus {
-  border-color: blue;
-  outline: 2px solid blue; /* Adds a custom outline */
+  border-color: #57503A;
+  outline: 1px solid black; /* Adds a custom outline */
+}
+
+.styled-inputs{
+  @apply w-full p-2 mb-3 border border-gray-400 rounded-md focus:border-[#57503A] focus:outline-[#57503A]
 }

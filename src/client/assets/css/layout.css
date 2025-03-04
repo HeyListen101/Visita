@@ -1,9 +1,16 @@
 /* Interactive Map*/
 .map-holder {
-    background: #FFFFFF;
     display: flex;
-    align-items: center;
-    justify-content: center; /* Centers content if needed */
+    align-items: center;  /* Center vertically */
+    justify-content: center; /* Center horizontally */
+    width: 100vw;
+    height: 100vh;
+    background: #FFFFFF;
+    overflow: hidden; /* Allows scrolling if needed */
+    position: relative; /* Needed for absolute-positioned children */
+    width: 80vw; /* Adjust as needed */
+    height: auto; /* Let content dictate height */
+    max-width: 1920px; /* Prevents map from becoming too wide */
 }
 
 /* Rectangle 73 */
@@ -1031,13 +1038,14 @@
 }
 
 /* Rectangle 1 */
-.rectangle-1 {
+.rectangle-1{
     position: absolute;
-    width: 400px;
-    height: 600px;
-    left: 120px;
-    top: 281px;
-
+    width: 16%;
+    height: 70%;
+    left: 23%;
+    top: 89%;
+    transform: translateX(-50%);
+    
     background: rgba(0, 0, 0, 0.4);
     border-radius: 9px;
 }
