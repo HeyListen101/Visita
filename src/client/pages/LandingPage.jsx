@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import signInWithGoogle from "../../server/api/login.js";
 
 function LandingPage() {
   return (
@@ -52,7 +53,7 @@ function LandingPage() {
 
         {/* Google Sign-In Button */}
         <Link to="/map" className="block w-full">
-        <button className="w-full flex items-center justify-center text-white">
+        <button onClick={signInWithGoogle} className="w-full flex items-center justify-center text-white">
             <img src="/path-to-google-logo.png" alt="Google" className="w-5 h-5 mr-2" />
             Continue with Google
           </button>
