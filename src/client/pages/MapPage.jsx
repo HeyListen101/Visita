@@ -1,4 +1,4 @@
-import backgroundImage from "../assets/background-images/Mapa.png";
+import backgroundImage from "../assets/background-images/MapPage.png";
 import React from "react";
 
 function MapPage() {
