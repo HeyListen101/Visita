@@ -15,13 +15,13 @@
 
 /* Rectangle 73 */
 .rectangle-73{
-    position: absolute;
-    width: 3000px;
-    height: 90px;
+    position: relative;
+    width: 1695px;
+    height: 79px;
     left: 0px;
-    top: 0px;
+    bottom: 435px;
 
-    background: #F5F5F5;
+    background:rgb(209, 8, 8);
 }
 
 /* Rectangle 72 */

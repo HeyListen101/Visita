@@ -1,8 +1,8 @@
 import express from "express";
 import ViteExpress from "vite-express";
-import { supabase } from "./api/supabaseClient.js"; // TODO: Fix the SupabaseClient because it's redundant; it should just be implemented here 
 import dotenv from "dotenv";
 import path from "path";
+import createAuthRouter from "./api/authentication.js";
 
 // Configure which ENV to use
 const ENV = process.env.NODE_ENV || "dev";
@@ -15,36 +15,27 @@ dotenv.config({ path: path.resolve(process.cwd(), envFile) });
 
 const app = express();
 
-// Google OAuth Route
-app.get("/auth/google", async (req, res) => {
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${process.env.BASE_URL}/auth/callback`, // Set your callback URL
-    },
-  });
+app.use(express.json());
 
-  if (error) {
-    return res.status(400).json({ error: error.message });
-  }
+const authRoutes = createAuthRouter(
+  process.env.VITE_SUPABASE_URL,
+  process.env.VITE_SUPABASE_ANON_KEY,
+  process.env.VITE_BASE_URL,
+);
 
-  res.redirect(data.url);
+app.get('/api/env', (req, res) => {
+  res.json({
+    SUPABASE_URL: process.env.VITE_SUPABASE_URL,
+    SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY,
+    VITE_GOOGLE_CLIENT_ID: process.env.VITE_GOOGLE_CLIENT_ID,
+    VITE_GOOGLE_CLIENT_SECRET: process.env.VITE_GOOGLE_CLIENT_SECRET,
+    VITE_BASE_URL: process.env.VITE_BASE_URL
+  })
 });
 
-// Google OAuth Callback Route
-app.get("/auth/callback", (req, res) => {
-  res.send("Google Login Successful!");
-});
+app.use("/auth", authRoutes);
 
 // Start app
 ViteExpress.listen(app, 3000, () =>
   console.log("Server has served on http://localhost:3000!")
 );
-
-// #TODO: Fix routing because it's fucked up now _after_ configuring Google Sign-n
-// #TODO: Experiment with Google Sign-In; este removing it and building it back up again 
-
-// Basic route
-app.get("/hello", (req, res) => {
-  res.send("Visita!");
-});

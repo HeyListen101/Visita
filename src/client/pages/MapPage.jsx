@@ -12,6 +12,11 @@ function MapPage() {
         height: "100vh",
       }}
     >
+      {/* <div className="rectangle-73"></div> */}
+
+
+
+
     </div>
   );
 }
