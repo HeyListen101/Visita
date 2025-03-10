@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import path from "path";
 import createAuthRouter from "./api/authentication.js";
 
-// Configure which ENV to use
+{ /* Configure which ENV to use */ } 
 const ENV = process.env.NODE_ENV || "dev";
 const envFile = {
   dev: "dev.env",
@@ -13,16 +13,26 @@ const envFile = {
 }[ENV];
 dotenv.config({ path: path.resolve(process.cwd(), envFile) });
 
+{ /* Create the express server */ }
 const app = express();
 
+{ /* Let the express server use JSON (Primarily for debugging) */ } 
 app.use(express.json());
 
+
+{ /* Create an AuthRouter (The method I found to pass env vars 
+  inside the authentication router instead of re-implementing
+  env var checking) */ } 
 const authRoutes = createAuthRouter(
   process.env.VITE_SUPABASE_URL,
   process.env.VITE_SUPABASE_ANON_KEY,
   process.env.VITE_BASE_URL,
 );
 
+{ /* Bridge to get to /auth/login-method */ }
+app.use("/auth", authRoutes);
+
+{ /* Create an endpoint for the front end to call to retrieve env vars */ } 
 app.get('/api/env', (req, res) => {
   res.json({
     SUPABASE_URL: process.env.VITE_SUPABASE_URL,
@@ -33,9 +43,7 @@ app.get('/api/env', (req, res) => {
   })
 });
 
-app.use("/auth", authRoutes);
-
-// Start app
+{ /* Listen at port 3000 for the server */ }
 ViteExpress.listen(app, 3000, () =>
   console.log("Server has served on http://localhost:3000!")
 );
