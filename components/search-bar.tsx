@@ -15,11 +15,11 @@ type SearchResult = {
 
 const supabase = createClient();
 
-const SearchBar = () => {
+export const SearchBar = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const { setSelectedStoreId, setStoreName, setIsOpen } = useMapSearch(); 
+  const { setSelectedStoreId, setStoreName, setIsOpen } = useMapSearch();
 
   const handleSearch = async (term: string) => {
     if (!term.trim()) {
@@ -31,6 +31,7 @@ const SearchBar = () => {
     setIsSearching(true);
   
     try {
+      // ... (your existing search logic remains the same) ...
       let combinedResults: SearchResult[] = [];
       
       if (term.length <= 3) {
@@ -41,7 +42,7 @@ const SearchBar = () => {
     
         if (productError) console.log('Error fetching products:', productError);
     
-        if (products && products.length >= 0) {
+        if (products && products.length > 0) {
           combinedResults = products.map((item) => ({
             productName: item.name,
             storeName: item.store?.name || 'Unknown Store',
@@ -141,6 +142,7 @@ const SearchBar = () => {
   };
 
   const handleResultClick = async (result: SearchResult) => {
+    // ... (your existing logic) ...
     const storeId = result.storeId;
     if (!storeId) {
       console.log('Store ID is missing');
@@ -148,40 +150,45 @@ const SearchBar = () => {
       setSearchResults([]);
       return;
     }
-    // try {
-    //   const store = await fetchStoreData(storeId);
-    //   if (store) {
-    //     setStoreName(store.name || result.storeName);
-    //     setIsOpen(store.storestatus?.isopen || false);
-    //     setSelectedStoreId(store.storeid);
-    //   }
-    // } catch (error) {
-    //   console.log('Error processing result:', error);
-    // }
+    try {
+      const store = await fetchStoreData(storeId);
+      if (store) {
+        setStoreName(store.name || result.storeName);
+        setSelectedStoreId(store.storeid, store.name);
+        setIsOpen(store.storestatus?.isopen || false);
+      }
+    } catch (error) {
+      console.log('Error processing result:', error);
+    }
     setSearchTerm('');
     setSearchResults([]);
   };
 
   const fetchStoreData = async (id: string) => {
+    // ... (your existing logic) ...
     try {
-      const { data: store, error } = await supabase
-        .from('store')
-        .select(`*, storestatus:storestatus(*)`)
-        .eq('storeid', id)
-        .single();
-      if (error) {
-        console.log('Error fetching store:', error);
+        // No need to set setIsSearching(true) here unless it's a very long operation
+        // and you want a global loading state for this specific fetch.
+        // The main search bar handles its own isSearching.
+        const { data: store, error } = await supabase
+          .from('store')
+          .select(`*, storestatus:storestatus(*)`)
+          .eq('storeid', id)
+          .single();
+        if (error) {
+          console.log('Error fetching store:', error);
+          return null;
+        }
+        return store;
+      } catch (error) {
+        console.log('Unexpected error fetching store:', error);
         return null;
       }
-      return store;
-    } catch (error) {
-      console.log('Unexpected error fetching store:', error);
-      return null;
-    }
+      // No finally setIsSearching(false) here if you remove it from try
   };
   
-  
-
+  // Determine if the results dropdown should be shown.
+  // Show it if there's a search term, regardless of whether it's currently searching or has results.
   const showResultsDropdown = searchTerm.trim() !== '';
 
   return (
