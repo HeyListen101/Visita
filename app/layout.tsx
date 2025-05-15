@@ -12,8 +12,13 @@ const poppins = Poppins({
 export const metadata = {
   title: "Visita",
   description: "Go to the market without even going to the market!",
-  viewport: 'width=device-width, initial-scale=1.0, user-scalable=yes',
 };
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1.0,
+  userScalable: 'yes',
+}
 
 export default function RootLayout({
   children,

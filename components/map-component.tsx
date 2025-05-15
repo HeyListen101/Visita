@@ -39,14 +39,13 @@ export default function MapComponent() {
     colEnd?: number;
   }>({});
   const { 
-    selectedStoreId, 
-    setSelectedStoreId, 
-    storeName, 
-    setStoreName, 
-    isOpen, 
-    setIsOpen,
-    selectedProductName,
-    isMapSelectionInProgress,
+    selectedStoreId,  // Read from context
+    setSelectedStoreId, // Call this to change selection
+    storeName,          // Read from context (set by SearchBar or this component after fetch)
+    setStoreName,       // Context setter
+    isOpen,             // Read from context
+    setIsOpen,          // Context setter
+    lastSelectionOrigin // Read the origin
   } = useMapSearch();
 
   const handleToolTipPositionChange = (newPosition: 'top' | 'right' | 'bottom' | 'left') => {
@@ -158,83 +157,86 @@ export default function MapComponent() {
   // useEffect for handling custom 'storeSelected' event from search bar
   useEffect(() => {
     const handleStoreSelectedEvent = (event: CustomEvent) => {
-      const { storeId: newStoreIdFromEvent } = event.detail;
-      console.log("MapComponent: Received 'storeSelected' event for:", newStoreIdFromEvent);
-  
-      // Check if we're already handling a selection from the map
-      // or if the context is currently dispatching an event
-      if (isMapSelectionInProgress) {
-        console.log("MapComponent: Ignoring event because map selection is in progress");
+      const { storeId: newStoreIdFromEvent, origin } = event.detail; // Get origin
+      
+      console.log(`MapComponent: Received 'storeSelected' event for ID: ${newStoreIdFromEvent}, Origin: ${origin}. Current selectedStoreId: ${selectedStoreId}`);
+
+      // If the event originated from the map itself, MapComponent already handled it in handleMapBlockClick.
+      // Or, if the ID is already the current one.
+      if (origin === 'map' || newStoreIdFromEvent === selectedStoreId) {
+        console.log("MapComponent: Ignoring 'storeSelected' event (origin is map or ID unchanged).");
         return;
       }
-  
-      // Only update if the ID is different from the current one
-      if (newStoreIdFromEvent !== selectedStoreId) {
-        // Directly fetch store data without calling setSelectedStoreId again
-        fetchStoreData(newStoreIdFromEvent);
+
+      // Event came from SearchBar or another source
+      // Update local state based on this new selection
+      // The context's selectedStoreIdState will already be updated by the time this event is handled.
+      // We need to ensure MapComponent's own UI reflects this (e.g., tooltip, fetched data for StoreComponent if it relies on MapComponent's fetch)
+      
+      console.log(`MapComponent: Processing 'storeSelected' event from non-map origin for ID: ${newStoreIdFromEvent}`);
+      fetchStoreData(newStoreIdFromEvent); // Fetch data for the store selected via search
         
-        // Find the block data to update tooltip coordinates
-        const selectedBlock = mapData.find(block => block.storeId === newStoreIdFromEvent);
-        if (selectedBlock) {
-          setSelectedBlockCoords({
-            rowStart: selectedBlock.rowStart,
-            rowEnd: selectedBlock.rowEnd,
-            colStart: selectedBlock.colStart,
-            colEnd: selectedBlock.colEnd
-          });
+      const selectedBlock = mapData.find(block => block.storeId === newStoreIdFromEvent);
+      if (selectedBlock) {
+        setSelectedBlockCoords({
+          rowStart: selectedBlock.rowStart,
+          rowEnd: selectedBlock.rowEnd,
+          colStart: selectedBlock.colStart,
+          colEnd: selectedBlock.colEnd,
+        });
+        if (selectedBlock.position) { // Assuming block has a position for tooltip
+            handleToolTipPositionChange(selectedBlock.position as TooltipPosition);
         }
+      } else {
+        setSelectedBlockCoords({}); // Clear if no block found (e.g. store not on map)
       }
     };
   
     window.addEventListener('storeSelected', handleStoreSelectedEvent as EventListener);
-  
-    return () => {
-      window.removeEventListener('storeSelected', handleStoreSelectedEvent as EventListener);
-    };
-  }, [selectedStoreId, isMapSelectionInProgress, mapData]);
+    return () => window.removeEventListener('storeSelected', handleStoreSelectedEvent as EventListener);
+  }, [selectedStoreId, mapData]); // Simpler dependencies, primarily reacts to context ID
 
   useEffect(() => {
     targetRef.current?.scrollIntoView({ behavior: 'smooth' }); // or 'auto'
   }, []);
 
-  const handleMapBlockClick = (storeId: string, tooltipPosition?: TooltipPosition) => {
-    // Toggle selection - if clicking the same store, deselect it
-    const newSelectedStoreId = (selectedStoreId === storeId) ? null : storeId;
+  const handleMapBlockClick = (storeIdClicked: string, tooltipPositionValue?: TooltipPosition) => {
+    const newSelectedStoreId = (selectedStoreId === storeIdClicked) ? null : storeIdClicked;
     
-    // Update the context
-    // If selecting a store, fetch its data
+    console.log(`MapComponent: handleMapBlockClick for store ${storeIdClicked}. New target: ${newSelectedStoreId}`);
+
+    // Call context's setSelectedStoreId, indicating origin is 'map'
+    // The context will update its state and dispatch the 'storeSelected' event.
+    setSelectedStoreId(newSelectedStoreId, 'map'); 
+
     if (newSelectedStoreId) {
-      setSelectedStoreId(newSelectedStoreId);
-      fetchStoreData(newSelectedStoreId);
+      // Fetch data for the newly selected store and update local state for UI
+      fetchStoreData(newSelectedStoreId); 
       
-      // Find the block data from mapData that matches this storeId
-      const selectedBlock = mapData.find(block => block.storeId === storeId);
-      
+      const selectedBlock = mapData.find(block => block.storeId === newSelectedStoreId);
       if (selectedBlock) {
-        // Update selectedBlockCoords with the block's coordinates
-        setSelectedBlockCoords({
-          rowStart: selectedBlock.rowStart,
-          rowEnd: selectedBlock.rowEnd,
-          colStart: selectedBlock.colStart,
-          colEnd: selectedBlock.colEnd
-        });
-      }
-      
-      // Update tooltip position if provided
-      if (tooltipPosition) {
-        handleToolTipPositionChange(tooltipPosition);
+        setSelectedBlockCoords({ /* ... */ });
+        if (tooltipPositionValue) handleToolTipPositionChange(tooltipPositionValue);
       }
     } else {
-      // Clear selection in context
-      setSelectedStoreId(null);
-      // Clear selected block coordinates
+      // Deselection via map click
       setSelectedBlockCoords({});
+      // storeName and isOpen will be cleared by context if id is null,
+      // or by fetchStoreData if it fetches for a null ID (which it shouldn't).
+      // The event listener will also pick up the null ID if context dispatches for it (it currently doesn't).
+      // For deselection, the context should handle clearing storeName/isOpen when its internal ID becomes null.
     }
-    console.log(`Store ${storeId} ${(selectedStoreId === storeId) ? 'deselected' : 'selected'}`);
   };
 
   // Fetch specific store data when a store is selected
-  const fetchStoreData = async (storeId: string) => {
+  const fetchStoreData = async (storeId: string | null) => { // Allow null for deselection
+    if (!storeId) {
+        setStoreName(null);
+        setIsOpen(null);
+        setStoreData(null); // Clear local store data
+        setLoading(false);
+        return;
+    }
     try {
       setLoading(true);
       setError(null);
@@ -339,7 +341,7 @@ export default function MapComponent() {
             defaultColor={block.defaultColor}
             icon={block.icon}
             viewBox={block.viewBox}
-            clickBlock={handleMapBlockClick}
+            clickBlock={(id, tooltipPosition) => handleMapBlockClick(id, tooltipPosition as TooltipPosition)}
             tooltipPosition="bottom"
           />
         ))}

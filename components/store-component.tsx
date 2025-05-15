@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import BackgroundImage from '@/components/assets/background-images/Background.png';
@@ -8,27 +8,31 @@ import StoreStatusCard from './ui/store-status-card';
 import { useMapSearch } from '@/components/map-search-context';
 import { Button } from './ui/button';
 
+// --- Types (from your functional code) ---
+type ProductStatus = {
+  productstatusid: string;
+  price: number | string;
+  isavailable: boolean;
+  contributor: string;
+};
+
 type Product = {
-  productid: string;
+  productid: string; 
   store: string;
-  productstatus: any;
+  productstatus: ProductStatus | null | undefined; 
   contributor: string;
   brand: string;
   name: string;
   datecreated: string;
   isarchived: boolean;
-  price: number | string;
+  price: number | string; 
   description?: string;
-}
-
-type UpdateProdName = {
-  id: string;
-  name: string;
-};
-
-type UpdateProdPrice = {
-  id: string;
-  price: number;
+  _isNew?: boolean;        
+  _isUpdated?: boolean;    
+  _isDeleted?: boolean;   
+  _originalProduct?: Product; 
+  _tempId?: string;       
+  _isDeletedForever?: boolean; 
 };
 
 type StoreComponentProps = {
@@ -44,740 +48,556 @@ const StoreComponent: React.FC<StoreComponentProps> = ({
 }) => {
   const supabase = createClient();
   const {isOpen, setIsOpen} = useMapSearch();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); 
   const [totalPages, setTotalPages] = useState(1);
   const [isEditing, setEditing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false); 
+  const [isSaving, setIsSaving] = useState(false); 
   const [error, setError] = useState<string | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isAddingProduct, setAddingProduct] = useState(false);
-  const [currentUser, setCurrentUser] = useState<string>("User");
-  const [productNames, setProductNames] = useState<string[]>([]);
-  const [storeType, setStoreType] = useState<string | null>(null); 
-  const [productPrices, setProductPrices] = useState<number[]>([]);
-  const [storeDetailsLoading, setStoreDetailsLoading] = useState(false);
-  const [currProdNames, setCurrProdNames] = useState<UpdateProdName[]>([]);
-  const [currProdPrices, setCurrProdPrices] = useState<UpdateProdPrice[]>([]);
   
-  // Fetch user on mount
+  const [products, setProducts] = useState<Product[]>([]);
+  const [stagedProducts, setStagedProducts] = useState<Product[]>([]);
+
+  const [isPaginating, setIsPaginating] = useState(false);
+  const [currentUser, setCurrentUser] = useState<string>("User");
+  const [storeType, setStoreType] = useState<string | null>(null); 
+  const [storeDetailsLoading, setStoreDetailsLoading] = useState(false);
+  const prevStoreIdRef = useRef<string | undefined>(undefined);
+  const newProductsContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const fetchUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (data?.user) {
-        setCurrentUser(data.user.id);
-      }
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) setCurrentUser(data.user.id);
     };
     fetchUser();
   }, [supabase]);
 
-  // Fetch store product amount on mount
-  useEffect(() => {
-    // Function to update items per page based on screen width
+  useEffect(() => { 
     const handleResize = () => {
-      if (window.innerWidth <= 881) {
-        setItemsPerPage(1);
-      } else if (window.innerWidth <= 991) {
-        setItemsPerPage(2);  
-      } else if (window.innerWidth <= 1083) {
-        setItemsPerPage(3);
-      } else if (window.innerWidth <= 1175) {
-        setItemsPerPage(4);
-      } else if (window.innerWidth <= 1265) {
-        setItemsPerPage(5);
-      } else if (window.innerWidth <= 1450) {
-        setItemsPerPage(6);
-      } else {
-        setItemsPerPage(8);
-      }
+      if (window.innerWidth <= 881) setItemsPerPage(1);
+      else if (window.innerWidth <= 991) setItemsPerPage(2);  
+      else if (window.innerWidth <= 1083) setItemsPerPage(3);
+      else if (window.innerWidth <= 1175) setItemsPerPage(4);
+      else if (window.innerWidth <= 1265) setItemsPerPage(5);
+      else if (window.innerWidth <= 1450) setItemsPerPage(6);
+      else setItemsPerPage(8);
     };
-    
-    // Set initial value
     handleResize();
     window.addEventListener('resize', handleResize);
-    
-    // Clean up event listener on component unmount
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-    // Effect for fetching store details (including storetype) and products
-  useEffect(() => {
-    if (storeId && isSelected) {
-      // Reset states for the new store
-      setProducts([]);
-      setStoreType(null);
-      setCurrentPage(1);
-      setTotalPages(1);
-      setError(null);
-
-      const fetchStoreData = async () => {
-        setStoreDetailsLoading(true);
-        try {
-          const { data: storeData, error: storeError } = await supabase
-            .from('store') // Assuming your table is named 'store'
-            .select('store_type')
-            .eq('storeid', storeId)
-            .single();
-
-          if (storeError) {
-            console.log('Error fetching store type:', storeError.message);
-            setStoreType('N/A'); // Or some default error value
-          } else if (storeData) {
-            setStoreType(storeData.store_type);
-          } else {
-            setStoreType('N/A'); // Store not found or storetype is null
-          }
-        } catch (err) {
-          console.log('Exception fetching store type:', err);
-          setStoreType('Error');
-        }
-        setStoreDetailsLoading(false);
-      };
-      
-      fetchStoreData();
-      fetchAllProducts(); // Fetch products after setting up store details
-    } else {
-      // Reset when no store is selected or deselected
-      setProducts([]);
-      setStoreType(null);
-    }
-  }, [storeId, isSelected, supabase]);
-
-  // Set up realtime product subscription
-  useEffect(() => {
-    if (!storeId || !isSelected) return;
-    // Subscribe to product changes for the current store
-    const productChannel = supabase
-      .channel(`product-changes-${storeId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*', 
-          schema: 'public',
-          table: 'product',
-          filter: `store=eq.${storeId}`,
-        },
-        async (payload) => {
-          if (payload.eventType === 'INSERT') {
-            const { data } = await supabase
-              .from('product')
-              .select('*, productstatus(*)')
-              .eq('productid', payload.new.productid)
-              .single();
-            if (data) {
-              const newProduct = {
-                ...data,
-                price: data.productstatus?.price ?? 'N/A',
-                productstatus: data.productstatus?.productstatusid || ''
-              };
-              setProducts(prevProducts => {
-                const updatedProducts = [...prevProducts, newProduct].sort((a, b) => a.name.localeCompare(b.name));
-                setTotalPages(Math.ceil(updatedProducts.length / itemsPerPage));
-                return updatedProducts;
-              });
-            }
-          } else if (payload.eventType === 'UPDATE') {
-            const { data } = await supabase
-              .from('product')
-              .select('*, productstatus(*)')
-              .eq('productid', payload.new.productid)
-              .single();
-            setProducts(prevProducts => 
-              prevProducts.map(product => 
-                product.productid === payload.new.productid && data?.productstatus ? {
-                  ...product,
-                  ...payload.new,
-                  price: data.productstatus.price ?? 'N/A',
-                } : product
-              )
-            );
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE', // Specifically listen for DELETE
-          schema: 'public',
-          table: 'product',
-          // No filter here for DELETE as Supabase might not support filter on OLD record for DELETE
-        },
-        async (payload) => {
-          // Check if the deleted product belongs to the current store
-          // This check is important because DELETE events might not be filterable by `storeId` in the subscription
-          if (payload.old && payload.old.store === storeId) {
-              setProducts(prevProducts => {
-                  const filteredProducts = prevProducts.filter(
-                  product => product.productid !== payload.old.productid
-                  );
-                  setTotalPages(Math.ceil(filteredProducts.length / itemsPerPage));
-                  return filteredProducts;
-              });
-          }
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log(`Subscribed to product changes for store ${storeId}`);
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.log(`Product subscription error for store ${storeId}: ${status}`);
-        }
-      });
-    
-    return () => {
-      supabase.removeChannel(productChannel);
-    };
-  }, [storeId, isSelected, supabase]);
-
-   // Pagination
-  const handlePrevPage = () => {
-    if (currentPage > 1 && !isAnimating) {
-      setIsAnimating(true);
-      setCurrentPage(currentPage - 1);
-      setTimeout(() => setIsAnimating(false), 500);
-    }
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages && !isAnimating) {
-      setIsAnimating(true);
-      setCurrentPage(currentPage + 1);
-      setTimeout(() => setIsAnimating(false), 500);
-    }
-  };
-  
-  // Fetch all products for the store
-  const fetchAllProducts = async () => {
-    if (!storeId) return;
-    
+  const fetchAllProductsCallback = useCallback(async (currentStoreId: string, currentIsEditingState: boolean) => {
+    if (!currentStoreId) return;
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      
-      const { data, error } = await supabase 
+      const { data, error: fetchError } = await supabase 
         .from('product')
-        .select('*, productstatus!inner(productstatusid, price, isavailable, contributor)') // Use !inner to ensure productstatus exists
-        .eq('store', storeId)
-        .order('name', { ascending: true }); // Order by name for consistency
+        .select('*, productstatus:productstatus(*)')
+        .eq('store', currentStoreId)
+        .order('name', { ascending: true });
       
-      if (error) throw error;
-      
-      const processedProducts = data?.map(product => ({
+      if (fetchError) throw fetchError;
+
+      const processedProducts: Product[] = data?.map(product => ({
         ...product,
-        price: product.productstatus?.price ?? 'N/A', // Ensure price exists
-        // productstatus id is already part of the productstatus object
+        price: product.productstatus?.price ?? 'N/A',
+        productstatus: product.productstatus,
       })) || [];
       
       setProducts(processedProducts);
-      setTotalPages(Math.ceil(processedProducts.length / itemsPerPage));
-      
-    } catch (error: any) {
-      console.log('Error fetching products:', error.message);
+      if (!currentIsEditingState) { 
+          setStagedProducts(JSON.parse(JSON.stringify(processedProducts))); 
+      }
+    } catch (err: any) {
+      console.log('Error fetching products:', err.message);
       setError('Failed to load products');
     } finally {
       setLoading(false);
     }
+  }, [supabase]); 
+
+  useEffect(() => {
+    const hasStoreChanged = prevStoreIdRef.current !== storeId && storeId !== "";
+    if (storeId) prevStoreIdRef.current = storeId;
+
+    if (storeId && isSelected) {
+      console.log(`StoreComponent: Now displaying store ${storeId}`);
+      if (hasStoreChanged) {
+        setProducts([]); 
+        setStagedProducts([]); 
+        setStoreType(null);
+        setCurrentPage(1);
+        setError(null);
+        if (isEditing) setEditing(false);
+      }
+
+      const fetchStoreTypeData = async () => {
+        setStoreDetailsLoading(true);
+        try {
+          const { data: storeData, error: storeError } = await supabase
+            .from('store').select('store_type').eq('storeid', storeId).single();
+          if (storeError) { console.log('Error fetching store type:', storeError.message); setStoreType('N/A');}
+          else if (storeData) setStoreType(storeData.store_type);
+          else setStoreType('N/A');
+        } catch (err) { console.log('Exception fetching store type:', err); setStoreType('Error'); }
+        setStoreDetailsLoading(false);
+      };
+      
+      if (hasStoreChanged || (products.length === 0 && !loading) || (products.length > 0 && products[0].store !== storeId && !loading) ) {
+        fetchStoreTypeData();
+        fetchAllProductsCallback(storeId, isEditing); 
+      }
+    } else { 
+      setProducts([]); setStagedProducts([]); setStoreType(null);
+      if (isEditing) setEditing(false);
+    }
+  }, [storeId, isSelected, supabase, fetchAllProductsCallback, isEditing, loading, products]);
+
+  useEffect(() => { 
+    let sourceForPagination;
+    if (isEditing) {
+        sourceForPagination = stagedProducts.filter(p => !p._isNew && !p._isDeleted);
+    } else {
+        sourceForPagination = products;
+    }
+    const newTotalPages = Math.ceil(sourceForPagination.length / itemsPerPage) || 1;
+    setTotalPages(newTotalPages);
+
+    if (currentPage > newTotalPages) {
+        setCurrentPage(newTotalPages);
+    } else if (newTotalPages === 1 && currentPage !== 1) { // If only one page, reset to 1
+        setCurrentPage(1);
+    }
+  }, [products, stagedProducts, isEditing, itemsPerPage, currentPage]);
+
+  useEffect(() => { 
+    if (!storeId || !isSelected) return;
+    const handleRealtimeEvent = (payload: any) => {
+        console.log('Realtime event received:', payload, '; Currently editing:', isEditing);
+        if (!isEditing) {
+            fetchAllProductsCallback(storeId, false); 
+        } else {
+            fetchAllProductsCallback(storeId, true); 
+            console.log("Underlying product data changed during edit. Staged changes are preserved. Consider notifying user.");
+        }
+    };
+    const productChannel = supabase.channel(`product-changes-${storeId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'product', filter: `store=eq.${storeId}` }, handleRealtimeEvent)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'productstatus' /* TODO: Add robust filter if possible */ }, 
+        (payload) => {
+            console.log('Product status changed:', payload);
+            if (!isEditing) fetchAllProductsCallback(storeId, false);
+            else fetchAllProductsCallback(storeId, true);
+        }
+      )
+      .subscribe((status) => { if (status === 'SUBSCRIBED') console.log(`Subscribed to product changes for store ${storeId}`);});
+    return () => { supabase.removeChannel(productChannel); };
+  }, [storeId, isSelected, supabase, fetchAllProductsCallback, isEditing]);
+
+  const handlePaginationCooldown = () => { setIsPaginating(true); setTimeout(() => setIsPaginating(false), 300);};
+  const handlePrevPage = () => {if (currentPage > 1 && !isAnimating && !isPaginating) { setIsAnimating(true); setCurrentPage(currentPage - 1); handlePaginationCooldown(); setTimeout(() => setIsAnimating(false), 300);}};
+  const handleNextPage = () => {if (currentPage < totalPages && !isAnimating && !isPaginating) { setIsAnimating(true); setCurrentPage(currentPage + 1); handlePaginationCooldown(); setTimeout(() => setIsAnimating(false), 300);}};
+
+  const getPaginatedExistingStagedProducts = () => {
+    const existing = stagedProducts.filter(p => !p._isNew && !p._isDeleted);
+    existing.sort((a, b) => a.name.localeCompare(b.name));
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return existing.slice(startIndex, startIndex + itemsPerPage);
   };
 
-  // Get current page products
-  const getCurrentPageProducts = () => {
+  const getNewStagedProductsToDisplay = () => {
+    return stagedProducts.filter(p => p._isNew && !p._isDeletedForever);
+  };
+
+  const getDisplayModeProducts = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return products.slice(startIndex, startIndex + itemsPerPage);
   };
 
-  // Toggle store status upon button click
-  const toggleStoreStatus = async () => {
+  const toggleStoreStatus = async () => { /* ... same as your functional code ... */ 
     if (!storeId) return;
     const newStatus = !isOpen;
     const { data: statusData, error: insertErr } = await supabase
-      .from('storestatus')
-      .insert({ contributor: currentUser, status: newStatus })
-      .select('storestatusid')
-      .single();
-    
-    if (insertErr || !statusData) {
-      console.log("Error creating new store status:", insertErr);
-      return;
-    }
-        
-    const { error: updateErr } = await supabase
-      .from('store')
-      .update({ storestatus: statusData.storestatusid })
-      .eq('storeid', storeId);
-    
-    if (!updateErr) {
-      setIsOpen(newStatus);
-    } else {
-      console.log("Error updating store status:", updateErr);
-    }
+      .from('storestatus').insert({ contributor: currentUser, status: newStatus })
+      .select('storestatusid').single();
+    if (insertErr || !statusData) { console.log("Error creating new store status:", insertErr); return; }
+    const { error: updateErr } = await supabase.from('store')
+      .update({ storestatus: statusData.storestatusid }).eq('storeid', storeId);
+    if (!updateErr) setIsOpen(newStatus);
+    else console.log("Error updating store status:", updateErr);
   };
 
-  const toggleEdit = () => { // Simplified
-    setEditing(!isEditing);
-    if (isEditing) { // If was editing, now canceling
-        setAddingProduct(false);
-        setProductNames([]);
-        setProductPrices([]);
-        setCurrProdNames([]);
-        setCurrProdPrices([]);
-    }
-  };
-
-  const saveEdit = async () => { // Made async
-    // setIsAnimating(true); // Optional: for loading state during save
-    try {
-        // Save new products
-        for (let i = 0; i < productNames.length; i++) {
-            const name = productNames[i];
-            const price = productPrices[i];
-            if (name && price !== undefined) { // Ensure price is defined, 0 is a valid price
-                const { data: statusData, error: statusError } = await supabase
-                    .from('productstatus')
-                    .insert({ contributor: currentUser, price: price, isavailable: true })
-                    .select('productstatusid')
-                    .single();
-
-                if (statusError || !statusData) throw statusError || new Error("Failed to create product status");
-
-                await supabase.from('product').insert({
-                    store: storeId, // Use storeId from props
-                    productstatus: statusData.productstatusid,
-                    contributor: currentUser,
-                    brand: storeName,
-                    name: name,
-                });
-            }
-        }
-
-        // Update existing product names
-        for (const nameUpdate of currProdNames) {
-            if (nameUpdate) { // Check if the entry exists (sparse array)
-                await supabase.from('product').update({ name: nameUpdate.name }).eq('productid', nameUpdate.id);
-            }
-        }
-
-        // Update existing product prices
-        for (const priceUpdate of currProdPrices) {
-           if (priceUpdate) { // Check if the entry exists
-             await supabase.from('productstatus').update({ price: priceUpdate.price }).eq('productstatusid', priceUpdate.id);
-             // To trigger realtime update on product (since productstatus might not be subscribed directly with filter)
-             await supabase.from('product').update({ productstatus: priceUpdate.id }).eq('productstatus', priceUpdate.id);
-           }
-        }
-        
-        // Reset editing states
-        setEditing(false);
-        setAddingProduct(false);
-        setProductNames([]);
-        setProductPrices([]);
-        setCurrProdNames([]);
-        setCurrProdPrices([]);
-        // Optionally re-fetch products to ensure UI consistency, though realtime should handle it
-        // fetchAllProducts(); 
-    } catch (error: any) {
-        console.log("Error saving edits:", error.message);
-        setError("Failed to save changes.");
+  const toggleEdit = () => {
+    if (isEditing) { 
+      setStagedProducts(JSON.parse(JSON.stringify(products))); 
+      setEditing(false);
+      setError(null);
+    } else { 
+      setStagedProducts(JSON.parse(JSON.stringify(products))); 
+      setCurrentPage(1); 
+      setEditing(true);
     }
   };
 
   const cancelEdit = () => {
+    setStagedProducts(JSON.parse(JSON.stringify(products))); 
     setEditing(false);
-    setAddingProduct(false);
-    setProductNames([]);
-    setProductPrices([]);
-    setCurrProdNames([]);
-    setCurrProdPrices([]);
+    setError(null); 
   };
 
-  const addProduct = () => {
-    setAddingProduct(true); // Keep this if you have specific UI for "adding mode"
-    setProductNames(prev => [...prev, '']);
-    setProductPrices(prev => [...prev, 0]); // Default price to 0 or undefined
+  const addProduct = () => { 
+    const tempId = `new-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const newProductEntry: Product = {
+      _isNew: true, _tempId: tempId, productid: tempId, name: '', price: '', 
+      store: storeId!, productstatus: { productstatusid: `temp-ps-${tempId}`, price: '', isavailable: true, contributor: currentUser }, 
+      contributor: currentUser, brand: storeName || 'N/A', datecreated: new Date().toISOString(), isarchived: false,
+    };
+    setStagedProducts(prev => [...prev, newProductEntry]); // Appends to end
+    setTimeout(() => {
+        newProductsContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
   };
-
-  const handleNameChange = (index: number, value: string) => {
-    setProductNames(prev => prev.map((name, i) => i === index ? value : name));
+  
+  const handleStagedProductChange = (id: string, field: keyof Product, value: any) => { 
+    setStagedProducts(prev => prev.map(p => {
+      if (p.productid === id || p._tempId === id) {
+        const updatedProduct = { ...p, [field]: value };
+        if (!p._isNew) updatedProduct._isUpdated = true;
+        if (field === 'price') {
+            const currentProductStatus = p.productstatus || { productstatusid: `temp-ps-${p._tempId || p.productid}`, price: '', isavailable: true, contributor: currentUser };
+            updatedProduct.productstatus = { ...currentProductStatus, price: value };
+        }
+        return updatedProduct;
+      }
+      return p;
+    })
+    // No global sort by name here to keep new items stable.
+    );
   };
-
-  const handlePriceChange = (index: number, value: number) => {
-    setProductPrices(prev => prev.map((price, i) => i === index ? value : price));
-  };
-
-  const handleChangeCurrentName = (index: number, productid: string, value: string) => {
-    setCurrProdNames(prev => {
-        const newArr = [...prev];
-        newArr[index] = {id: productid, name: value};
-        return newArr;
+  
+  const deleteProduct = (id: string) => { 
+    setStagedProducts(prevStaged => {
+        const productToDelete = prevStaged.find(p => p.productid === id || p._tempId === id);
+        if (productToDelete?._isNew) {
+            return prevStaged.filter(p => !(p._tempId === id && p._isNew));
+        } else {
+            return prevStaged.map(p => 
+                (p.productid === id) ? { ...p, _isDeleted: true, _isUpdated: false } : p
+            );
+        }
     });
   };
 
-  const handleChangeCurrentPrice = (index: number, productstatusid: string, value: number) => {
-    setCurrProdPrices(prev => {
-        const newArr = [...prev];
-        newArr[index] = {id: productstatusid, price: value};
-        return newArr;
-    });
-  };
-
-  const deleteProduct = async (productid: string, productstatusid: string, _: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
-    // Order matters: delete dependent product first, then productstatus, or handle DB constraints (ON DELETE CASCADE)
+  const saveEdit = async () => {
+    if (!storeId) return;
+    setIsSaving(true); setError(null); let anyError = false;
     try {
-        const { error: productDeleteError } = await supabase
-            .from('product')
-            .delete()
-            .eq('productid', productid);
-        if (productDeleteError) throw productDeleteError;
-
-        const { error: statusDeleteError } = await supabase
-            .from('productstatus')
-            .delete()
-            .eq('productstatusid', productstatusid);
-        if (statusDeleteError) throw statusDeleteError;
+      const productsToDelete = stagedProducts.filter(p => p._isDeleted && !p._isNew && p.productid !== p._tempId);
+      for (const p of productsToDelete) { 
+        const { error: e1 } = await supabase.from('product').delete().eq('productid', p.productid); if(e1) {console.error("Delete product error:", e1); anyError=true; continue; }
+        if (p.productstatus?.productstatusid) { 
+            const { error: e2 } = await supabase.from('productstatus').delete().eq('productstatusid', p.productstatus.productstatusid);
+            if(e2) console.warn("Delete productstatus error (product already deleted or cascade):", e2); // Warn instead of erroring out hard
+        }
+      }
+      const productsToUpdate = stagedProducts.filter(p => p._isUpdated && !p._isNew && !p._isDeleted && p.productid !== p._tempId);
+      for (const p of productsToUpdate) {
+        const o = products.find(op => op.productid === p.productid); if (!o) continue;
+        if (o.name !== p.name) {const {error}=await supabase.from('product').update({ name: p.name }).eq('productid', p.productid); if(error) {console.error("Update name error:", error);anyError=true; continue;}}
         
-        // Realtime should update the list, but you could also manually filter here
-        // for immediate UI feedback if needed, though it's better to rely on the subscription.
-    } catch (error: any) {
-        console.log("Error deleting product:", error.message);
-        setError("Failed to delete product.");
-    }
+        const originalPrice = Number(o.productstatus?.price ?? o.price);
+        const newPrice = Number(p.price); // Price from input is string, convert
+
+        if (originalPrice !== newPrice && p.productstatus?.productstatusid) {
+          const{error}=await supabase.from('productstatus').update({ price: newPrice, contributor: currentUser }).eq('productstatusid', p.productstatus.productstatusid); 
+          if(error){console.error("Update price error:", error);anyError=true; continue;}
+        } else if (originalPrice !== newPrice && !p.productstatus?.productstatusid && p._isNew) {
+          // This case should be handled by product ADDITION if productstatus is new
+          console.warn("Trying to update price on a new product without a productstatusid yet. This should be part of add.", p);
+        }
+      }
+      const productsToAdd = stagedProducts.filter(p => p._isNew && !p._isDeleted);
+      for (const p of productsToAdd) {
+        const{data:sd,error:se}=await supabase.from('productstatus').insert({ contributor:currentUser,price:Number(p.price),isavailable:true}).select('productstatusid').single(); 
+        if(se||!sd) {console.error("Insert productstatus error:", se); anyError=true; continue;}
+        const{error:pe}=await supabase.from('product').insert({store:storeId,productstatus:sd.productstatusid,contributor:currentUser,brand:storeName||'N/A',name:p.name}); 
+        if(pe){console.error("Insert product error:", pe);anyError=true; continue;}
+      }
+      if (anyError) throw new Error("One or more operations failed during save. Check console for details.");
+      
+      await fetchAllProductsCallback(storeId, false); 
+      setEditing(false);
+    } catch (err: any) { setError(err.message || "Failed to save changes. Please review."); console.error("Save error details:", err); } 
+    finally { setIsSaving(false); }
   };
   
   const getStoreEmoji = (type: string | null): string => {
-    if (!type) return "🏪"; // Default store emoji if type is null or undefined
-  
-    const lowerType = type.toLowerCase(); // Ensure case-insensitivity
-  
+    if (!type) return "🏪"; const lowerType = type.toLowerCase();
     switch (lowerType) {
-      case 'eatery':
-        return "🍴"; // Fork and knife
-      case 'pie':
-        return "🥧"; // Pie
-      case 'restroom':
-        return "🚻"; // Restroom symbol
-      case 'clothing':
-        return "👕"; // T-shirt (or 🛍️ for shopping bag)
-      case 'pizza':
-        return "🍕"; // Pizza slice
-      case 'cookie':
-        return "🍪"; // Cookie
-      case 'notebook':
-        return "📓"; // Notebook (or 📝 for pencil/memo)
-      case 'printer':
-        return "🖨️"; // Printer
-      case 'basket':
-        return "🧺"; // Basket (or 🛒 for shopping cart)
-      case 'veggie':
-        return "🥕"; // Carrot (or 🥦 for broccoli, 🥬 for leafy green)
-      case 'meat':
-        return "🥩"; // Cut of meat
-      case 'personnel':
-        return "👥"; // Busts in silhouette (or 🧑‍💼 for office worker)
-      case 'park':
-        return "🌳"; // Deciduous tree (or 🏞️ for national park)
-      case 'water':
-        return "💧"; // Droplet (or 🥤 for cup with straw if it's drinking water)
-      case 'haircut':
-        return "✂️"; // Scissors (or 💈 for barber pole)
-      case 'mail':
-        return "✉️"; // Envelope (or 📮 for postbox)
-      case 'money':
-        return "💰"; // Money bag (or 💵 for dollar banknote)
-      case 'coffee':
-        return "☕"; // Hot beverage
-      case 'milk':
-        return "🥛"; // Glass of milk (or 🍼 for baby bottle if appropriate)
-      default:
-        return "🏪"; // Fallback for any types not explicitly listed
+      case 'eatery': return "🍴"; case 'pie': return "🥧"; case 'restroom': return "🚻";
+      case 'clothing': return "👕"; case 'pizza': return "🍕"; case 'cookie': return "🍪";
+      case 'notebook': return "📓"; case 'printer': return "🖨️"; case 'basket': return "🧺";
+      case 'veggie': return "🥕"; case 'meat': return "🥩"; case 'personnel': return "👥";
+      case 'park': return "🌳"; case 'water': return "💧"; case 'haircut': return "✂️";
+      case 'mail': return "✉️"; case 'money': return "💰"; case 'coffee': return "☕";
+      case 'milk': return "🥛"; default: return "🏪";
     }
   };
 
+  // Determine which products to show based on mode
+  const currentVisibleExistingProducts = isEditing ? getPaginatedExistingStagedProducts() : getDisplayModeProducts();
+  const currentVisibleNewProducts = isEditing ? getNewStagedProductsToDisplay() : [];
+
   return (
-    // AnimatePresence key should ideally be storeId to re-trigger animations when store changes
-    <AnimatePresence mode="wait" key={storeId}> 
+    <AnimatePresence mode="wait" key={storeId || 'no-store-selected'}> 
       {isSelected && storeId && (
         <motion.div
           className="bg-white grid grid-rows-[100px_1fr] md:grid-rows-[120px_1fr] h-full rounded-[15px] shadow-md"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}
         >
-          {/* Header with background image */}
+          {/* Header Section - FROM YOUR UI CODE */}
           <motion.div 
             className="w-full relative transition-all duration-500 ease-in-out"
             layoutId={`background-container-${storeId}`}
           >
-            
-            <motion.img
-              layoutId={`background-image-${storeId}`}
-              src={BackgroundImage.src}
-              alt="Background"
-              className="absolute z-0 w-full h-full object-cover rounded-t-[15px] md:rounded-[15px]" // z-0 to be behind overlay
-            />
-            
-            <motion.div 
-              className="absolute z-1 bg-black bg-opacity-30 w-full h-full rounded-t-[15px] md:rounded-[15px]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.3 }}
-            />
-            {/* Status Card  */}
-            <motion.div 
-              className="pointer-events-auto absolute -right-16 top-0 z-10 touch-manipulation"
-              initial={{ opacity: 0, scale: 0.2 }}
-              animate={{ opacity: 1, scale: 0.4 }}
-              exit={{ opacity: 0, scale: 0.2 }}
-              transition={{ delay: 1.7, duration: 0.3 }}
-            >
+            <motion.img layoutId={`background-image-${storeId}`} src={BackgroundImage.src} alt="Background" className="absolute z-0 w-full h-full object-cover rounded-t-[15px] md:rounded-[15px]" />
+            <motion.div className="absolute z-1 bg-black bg-opacity-30 w-full h-full rounded-t-[15px] md:rounded-[15px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2, duration: 0.3 }} />
+            <motion.div className="pointer-events-auto absolute -right-16 top-0 z-10 touch-manipulation" initial={{ opacity: 0, scale: 0.2 }} animate={{ opacity: 1, scale: 0.4 }} exit={{ opacity: 0, scale: 0.2 }} transition={{ delay: 1.7, duration: 0.3 }}>
               <Button className="bg-transparent w-[195px] h-[100px] p-0 pb-12 z-9 rounded-[30px]" onClick={toggleStoreStatus} aria-label={isOpen ? "Mark store as closed" : "Mark store as open"}>  
                 <StoreStatusCard isOpen={isOpen || false} />
               </Button>
             </motion.div>
-            {/* Store Name */}
-            <motion.div 
-              className="relative pt-1 pl-2 md:pt-2 md:pl-3 z-2" // z-2 to be above overlay
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.3 }}
-            >
+            <motion.div className="relative pt-1 pl-2 md:pt-2 md:pl-3 z-2" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.3 }}>
               <h1 className="text-lg font-bold text-white line-clamp-2 w-[80%]">{storeName}</h1>
             </motion.div>          
-            {/* Store Type Label */}
-            <motion.div
-              className="absolute bottom-0 left-0 p-3 z-2" // z-2 to be above overlay
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.3 }}
-            >   
+            <motion.div className="absolute bottom-0 left-0 p-3 z-2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.3 }}>   
                <button className="bg-white text-emerald-700 px-2 py-0.5 md:px-3 md:py-1 text-[10px] md:text-xs rounded-full font-bold flex items-center shadow-md transition-all duration-300 hover:shadow-lg">
                 <span className="mr-1 text-[10px] md:text-xs">{getStoreEmoji(storeType)}</span> 
-                <span className="whitespace-nowrap"> {/* Prevent wrapping for store type name */}
+                <span className="whitespace-nowrap">
                   {storeDetailsLoading ? "Loading..." : (storeType ? storeType.charAt(0).toUpperCase() + storeType.slice(1) : "Type")}
                 </span>
               </button>
             </motion.div>  
           </motion.div>
-          {/* Products section */}
-          <div className="w-full overflow-hidden flex flex-col justify-between rounded-b-[15px] md:rounded-[15px] ">
-            <div className="mb-1 md:mb-2 text-left gap-x-2 md:gap-x-4 sticky bg-white z-10 mx-4 pt-2">
+          
+          {/* Products Section - FROM YOUR UI CODE, with integrated logic */}
+          <div className="w-full overflow-hidden flex flex-col justify-between rounded-b-[15px] md:rounded-[15px]">
+            <div className="mb-1 md:mb-2 text-left gap-x-2 md:gap-x-4 sticky top-0 bg-white z-10 mx-4 pt-2">
               <h2 className="text-l md:text-md font-semibold text-gray-800 text-left">Products/Services</h2>
             </div>
             <div
               className="overflow-y-auto flex-grow px-4
-                [&::-webkit-scrollbar]:w-1
-                [&::-webkit-scrollbar-track]:rounded-full
-                [&::-webkit-scrollbar-track]:bg-gray-100
-                [&::-webkit-scrollbar-thumb]:rounded-full
-                [&::-webkit-scrollbar-thumb]:bg-gray-300"
+                [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100
+                [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300
+                dark:[&::-webkit-scrollbar-track]:bg-[#F0F0F0] dark:[&::-webkit-scrollbar-thumb]:bg-neutral-400"
             >
-              {loading ? (
-                <div className="flex justify-center items-center h-full text-gray-500">
-                  <p>Loading products...</p>
-                </div>
-              ) : error ? (
-                <div className="flex justify-center items-center h-full">
-                  <p className="text-red-500">{error}</p>
-                </div>
-              ) : products.length === 0 && !isEditing ? (
-                <div className="flex justify-center items-center h-full text-gray-500">
-                  <p>No products found for this store.</p>
-                </div>
-              ) : (
-                <>
-                  {/* Table header - only show if not editing or if editing and has products */}
-                  {(getCurrentPageProducts().length > 0 || isAddingProduct || isEditing && products.length === 0 ) && (
-                    <div className="flex mb-1 md:mb-2 text-left gap-x-2 md:gap-x-4 sticky top-0 bg-white z-10 py-2 border-b border-gray-200">
-                      <div className="font-medium text-gray-600 flex-grow text-xs md:text-sm basis-1/3 md:basis-1/2 md:w-16 md:text-left">Name</div>
-                      <div className="font-medium text-gray-600 flex-grow text-xs md:text-sm basis-1/3 md:basis-2/4 md:w-16 md:text-right">Price</div>
-                      {isEditing && <div className="w-[15px] flex-shrink-0"></div>} {/* Spacer for delete icon */}
+              {(loading && !isEditing) && <div className="flex justify-center items-center h-full"><p>Loading products...</p></div>}
+              {(error && !isEditing) && <div className="flex justify-center items-center h-full"><p className="text-red-500">{error}</p></div>}
+              
+              {(!loading && !error) && (
+                 (isEditing ? (currentVisibleExistingProducts.length + currentVisibleNewProducts.length) : products.length) === 0 && !isEditing ? (
+                    <div className="flex justify-center items-center h-full text-gray-500">
+                        <p>No products found for this store.{isEditing ? " Add one below!" : ""}</p>
                     </div>
-                  )}
-                  {/* Product list */}
-                  <AnimatePresence>
-                    <motion.div
-                      key={currentPage} // Add key here for page transition animation
-                      initial={{ opacity: 0, x: 2 }}
-                      animate={{ opacity: 1, x: 3 }}
-                      exit={{ opacity: 0, y: 0 }}
-                      transition={{ duration: 0.3, ease: 'easeIn' }}
-                      className="space-y-2"
-                    >
-                      {getCurrentPageProducts().map((product, index) => (
+                 ) : (
+                    <>
+                      {/* Product Table Header */}
+                      {(currentVisibleExistingProducts.length > 0 || currentVisibleNewProducts.length > 0) && (
+                        <div className="flex mb-1 md:mb-2 text-left gap-x-2 md:gap-x-4 sticky top-0 bg-white z-10 py-2 border-b border-gray-200">
+                          <div className="font-medium text-gray-600 flex-grow text-xs md:text-sm basis-2/5 md:basis-1/2">Name</div>
+                          <div className="font-medium text-gray-600 text-xs md:text-sm basis-2/5 md:basis-1/4 text-right">Price</div>
+                          {isEditing && <div className="w-[25px] basis-1/5 md:basis-1/4 flex-shrink-0"></div>} {/* Spacer */}
+                        </div>
+                      )}
+
+                      {/* List of Existing/Paginated Products */}
+                      <AnimatePresence mode="popLayout">
                         <motion.div 
-                          key={product.productid}
-                          layout // Animate layout changes (e.g., when deleting)
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.3, ease: 'easeInOut' }}
-                          className="flex items-center pb-1 border-b border-gray-100 gap-x-2 md:gap-[10px]"
+                            key={currentPage + (isEditing ? '-edit-existing' : '-disp')} 
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2, ease: 'easeInOut' }}
+                            className="space-y-2"
                         >
-                          {isEditing ? (
-                            <>
-                              <input 
-                                type="text" 
-                                defaultValue={product.name}
-                                className="bg-white text-black text-left text-sm flex-grow p-1 border rounded-[10px] min-w-0" // min-w-0 for flex basis
-                                onChange={(e) => handleChangeCurrentName(index, product.productid, e.target.value)}
-                                required
-                              />
-                              <input 
-                                type="number"
-                                defaultValue={product.price as number} // Assuming price is number when editing
-                                className="bg-white text-black text-right text-sm w-16 md:w-[20%] p-1 border rounded-[10px] appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                onChange={(e) => handleChangeCurrentPrice(index, product.productstatus.productstatusid, Number(e.target.value))}
-                                required
-                                step="1" // For currency
-                              />
-                              <button 
-                                onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => deleteProduct(product.productid, product.productstatus.productstatusid, e as any)}
-                                className="flex-shrink-0 p-1 bg-[#F07474] hover:bg-red-600 rounded-full transition-colors"
-                                aria-label="Delete product"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className="w-[10px] h-[10px]" fill="white">
-                                  <path d="M432 256c0 17.7-14.3 32-32 32L48 288c-17.7 0-32-14.3-32-32s14.3-32 32-32l352 0c17.7 0 32 14.3 32 32z"/>
-                                </svg>
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <div className="text-gray-800 text-sm flex-grow basis-2/3 md:basis-1/2 truncate" title={product.name}>{product.name}</div>
-                              <div className="text-gray-800 font-medium text-sm basis-1/3 md:basis-auto w-16 md:w-fit text-right">₱{product.price}</div>
-                            </>
-                          )}
+                          {currentVisibleExistingProducts.map((product) => (
+                            <motion.div 
+                              key={product.productid} // Existing products have stable productid
+                              layout 
+                              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                              transition={{ duration: 0.2, ease: 'easeOut' }}
+                              className={`flex items-center pb-1 border-b border-gray-100 gap-x-2 md:gap-[10px] ${isEditing && product._isDeleted ? 'opacity-60 italic bg-red-50 rounded-md' : ''}`}
+                            >
+                              {isEditing && !product._isDeleted ? (
+                                <>
+                                  <input 
+                                    type="text" 
+                                    value={product.name}
+                                    placeholder="Product Name"
+                                    className="bg-white text-black text-left text-sm flex-grow p-1 border rounded-[10px] min-w-0 basis-2/5 md:basis-1/2 disabled:bg-gray-100 disabled:text-gray-400"
+                                    onChange={(e) => handleStagedProductChange(product.productid, 'name', e.target.value)}
+                                    disabled={isSaving}
+                                    required
+                                  />
+                                  <div className="relative basis-2/5 md:basis-1/4">
+                                    <span className={`absolute left-2 top-1/2 -translate-y-1/2 text-gray-400`}>₱</span>
+                                    <input 
+                                      type="number"
+                                      value={product.price as string} 
+                                      placeholder="0.00"
+                                      className="bg-white text-black text-right text-sm w-full pl-6 pr-1 py-1 border rounded-[10px] appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:bg-gray-100 disabled:text-gray-400"
+                                      onChange={(e) => handleStagedProductChange(product.productid, 'price', e.target.value)}
+                                      disabled={isSaving}
+                                      required step="0.01" 
+                                    />
+                                  </div>
+                                  <div className="w-[25px] basis-1/5 md:basis-1/4 flex-shrink-0 flex justify-end">
+                                    <button 
+                                      onClick={() => deleteProduct(product.productid)}
+                                      className="p-1.5 bg-[#F07474] hover:bg-red-600 rounded-full transition-colors disabled:bg-gray-300"
+                                      aria-label="Mark product for deletion"
+                                      disabled={isSaving}
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className="w-[10px] h-[10px]" fill="white"><path d="M432 256c0 17.7-14.3 32-32 32L48 288c-17.7 0-32-14.3-32-32s14.3-32 32-32l352 0c17.7 0 32 14.3 32 32z"/></svg>
+                                    </button>
+                                  </div>
+                                </>
+                              ) : isEditing && product._isDeleted ? (
+                                <>
+                                  <span className="text-gray-500 text-sm flex-grow basis-2/5 md:basis-1/2 line-through">{product.name}</span>
+                                  <span className="text-gray-500 text-sm basis-2/5 md:basis-1/4 text-right line-through">₱{product.price}</span>
+                                  <div className="w-[25px] basis-1/5 md:basis-1/4 flex-shrink-0"></div>
+                                </>
+                              ) : (
+                                <> 
+                                  <div className="text-gray-800 text-sm flex-grow basis-2/3 md:basis-1/2 truncate" title={product.name}>{product.name}</div>
+                                  <div className="text-gray-800 font-medium text-sm basis-1/3 md:basis-auto w-16 md:w-fit text-right">₱{product.price}</div>
+                                </>
+                              )}
+                            </motion.div>
+                          ))}
                         </motion.div>
-                      ))}
-                    </motion.div>
-                  </AnimatePresence>
-                  {/* Add product button */}
-                  {isEditing && productNames.map((_, index) => (
-                    <motion.div 
-                        key={`new-${index}`} 
-                        className="flex items-center pb-1 border-b border-gray-100 gap-x-2 md:gap-[10px] mt-2"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                    >
-                      <input
-                        type="text"
-                        placeholder="New Product Name"
-                        value={productNames[index]}
-                        onChange={(e) => handleNameChange(index, e.target.value)}
-                        className="h-[30px] w-[fullpx] bg-white border text-black text-sm flex-grow p-1 rounded-[10px] min-w-0"
-                        required
-                      />
-                      <input
-                        type="number"
-                        placeholder="Price"
-                        value={productPrices[index]}
-                        onChange={(e) => handlePriceChange(index, Number(e.target.value))}
-                        className="h-[30px] bg-white border text-black text-sm w-16 md:w-[20%] p-1 rounded-[10px] appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        required
-                        step="0.01"
-                      />
-                       <div className="w-[25px] flex-shrink-0"></div> {/* Spacer to align with delete button */}
-                    </motion.div>
-                  ))}
-                  
-                  {isEditing && (
-                    <button 
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs flex items-center justify-center gap-1 w-full py-1.5 px-2 rounded-lg mt-2 mb-1 transition-colors"
-                      onClick={addProduct}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className="w-[10px] h-[10px]" fill="white">
-                        <path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/>
-                      </svg>
-                      Add Product
-                    </button>
-                  )}
-                </>
+                      </AnimatePresence>
+
+                      {/* Area for NEWLY ADDED products, rendered below existing ones */}
+                      {isEditing && (
+                        <div ref={newProductsContainerRef} className={`space-y-2 ${currentVisibleNewProducts.length > 0 ? 'mt-4 pt-2 border-t border-dashed border-gray-300' : ''}`}>
+                          <AnimatePresence mode="popLayout">
+                            {currentVisibleNewProducts.map((newProduct, index) => (
+                              <motion.div 
+                                key={newProduct._tempId!} 
+                                layout 
+                                initial={{ opacity: 0, y:10 }} animate={{ opacity: 1, y:0 }} exit={{opacity:0, y:-10}}
+                                transition={{ type: 'spring', stiffness: 300, damping: 30, duration: 0.2 }}
+                                className="flex items-center pb-1 border-b border-gray-100 gap-x-2 md:gap-[10px] mt-2 first:mt-0"
+                              >
+                                  <input 
+                                    type="text" 
+                                    value={newProduct.name}
+                                    placeholder="New Product Name"
+                                    className="bg-gray-50 text-black text-left text-sm flex-grow p-1 border rounded-[10px] min-w-0 basis-2/5 md:basis-1/2"
+                                    onChange={(e) => handleStagedProductChange(newProduct._tempId!, 'name', e.target.value)}
+                                    disabled={isSaving}
+                                    required
+                                    autoFocus={index === currentVisibleNewProducts.length - 1} // Autofocus only the last new item
+                                  />
+                                  <div className="relative basis-2/5 md:basis-1/4">
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">₱</span>
+                                    <input 
+                                      type="number"
+                                      value={newProduct.price as string} 
+                                      placeholder="0.00"
+                                      className="bg-gray-50 text-black text-right text-sm w-full pl-6 pr-1 py-1 border rounded-[10px] appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                      onChange={(e) => handleStagedProductChange(newProduct._tempId!, 'price', e.target.value)}
+                                      disabled={isSaving}
+                                      required step="0.01" 
+                                    />
+                                  </div>
+                                  <div className="w-[25px] basis-1/5 md:basis-1/4 flex-shrink-0 flex justify-end">
+                                    <button 
+                                      onClick={() => deleteProduct(newProduct._tempId!)}
+                                      className="p-1.5 bg-gray-300 hover:bg-gray-400 rounded-full transition-colors disabled:bg-gray-200"
+                                      aria-label="Remove new product"
+                                      disabled={isSaving}
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" className="w-[10px] h-[10px]" fill="currentColor"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>
+                                    </button>
+                                  </div>
+                              </motion.div>
+                            ))}
+                          </AnimatePresence>
+                        </div>
+                      )}
+                      
+                      {isEditing && (
+                        <button 
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs flex items-center justify-center gap-1 w-full py-1.5 px-2 rounded-lg mt-3 mb-1 transition-colors disabled:bg-emerald-300" // Added mt-3
+                          onClick={addProduct}
+                          disabled={isSaving}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className="w-[10px] h-[10px]" fill="white"><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/></svg>
+                          Add Product
+                        </button>
+                      )}
+                    </>
+                 )
               )}
             </div>
 
-            {/* Pagination controls */}
+            {/* Footer: Pagination and Edit/Save/Cancel Controls - FROM YOUR UI CODE, adapted for new logic */}
             <div className="border-t border-gray-200">
               <div className="flex justify-between items-center w-full px-2 py-2">
-
-                {/* Prev Button */}
                 <button
                   className={`flex items-center justify-center min-w-[40px] sm:min-w-[60px] md:min-w-[70px] py-1 px-1 sm:px-2 rounded-md transition-colors ${
-                    currentPage === 1 || isAnimating
+                    currentPage === 1 || isAnimating || isPaginating || 
+                    (isEditing ? getPaginatedExistingStagedProducts().length === 0 && currentPage === 1 && currentVisibleNewProducts.length === 0 : products.length === 0) // More precise disabled logic
                       ? 'text-gray-400 cursor-not-allowed'
                       : 'text-emerald-700 hover:bg-emerald-50'
                   }`}
                   onClick={handlePrevPage}
-                  disabled={currentPage === 1 || isAnimating}
+                  disabled={currentPage === 1 || isAnimating || isPaginating || (isEditing ? getPaginatedExistingStagedProducts().length === 0 && currentPage === 1 && currentVisibleNewProducts.length === 0 : products.length === 0)}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                   <span className="ml-1 hidden px1100:inline-block text-xs md:text-sm">Prev</span>
                 </button>
-
-                {/* Edit / Save / Cancel Buttons */}
+                
                 <div className="flex-grow flex justify-center items-center px-1 sm:px-2">
                   {isEditing ? (
                     <div className="grid grid-cols-1 px1100:grid-cols-2 gap-1 px1100:gap-2 w-full max-w-xs sm:max-w-[240px] mx-auto">
-                      {/* Save Button */}
-                      <Button
-                        variant="default"
-                        onClick={saveEdit}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] md:text-xs w-full h-7 md:h-8 flex items-center justify-center px-1 md:px-2 transition-colors"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 flex-shrink-0 hidden sm:inline-block">
-                          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                          <polyline points="17 21 17 13 7 13 7 21" />
-                          <polyline points="7 3 7 8 15 8" />
-                        </svg>
-                        Save
+                      <Button variant="default" onClick={saveEdit} disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] md:text-xs w-full h-7 md:h-8 flex items-center justify-center px-1 md:px-2 transition-colors disabled:bg-emerald-400 disabled:cursor-not-allowed">
+                        {isSaving ? (<div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div> ): (<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 flex-shrink-0 hidden sm:inline-block"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>)}
+                        {isSaving ? "Saving..." : "Save"}
                       </Button>
-
-                      {/* Cancel Button */}
-                      <Button
-                        variant="outline"
-                        onClick={cancelEdit}
-                        className="bg-red-100 hover:bg-red-200 border-red-300 text-red-700 text-[10px] md:text-xs w-full h-7 md:h-8 flex items-center justify-center px-1 md:px-2 transition-colors"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 flex-shrink-0 hidden sm:inline-block">
-                          <line x1="18" y1="6" x2="6" y2="18"></line>
-                          <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
+                      <Button variant="outline" onClick={cancelEdit} disabled={isSaving} className="bg-red-100 hover:bg-red-200 border-red-300 text-red-700 text-[10px] md:text-xs w-full h-7 md:h-8 flex items-center justify-center px-1 md:px-2 transition-colors disabled:opacity-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 flex-shrink-0 hidden sm:inline-block"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         Cancel
                       </Button>
                     </div>
                   ) : (
-                    // Edit Button
-                    <Button
-                      className="text-gray-600 !bg-transparent text-[10px] md:text-xs h-7 md:h-8 flex items-center justify-center"
-                      onClick={toggleEdit}
-                      aria-label="Edit Products"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" className="flex-shrink-0 px1100:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                      </svg>
+                    <Button className="text-gray-600 !bg-transparent text-[10px] md:text-xs h-7 md:h-8 flex items-center justify-center" onClick={toggleEdit} aria-label="Edit Products">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" className="flex-shrink-0 px1100:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
                       <span className="hidden px1100:inline-block ml-1">Edit Products</span>
                     </Button>
                   )}
                 </div>
 
-                {/* Next Button */}
                 <button
                   className={`flex items-center justify-center min-w-[40px] sm:min-w-[60px] md:min-w-[70px] py-1 px-1 sm:px-2 rounded-md transition-colors ${
-                    currentPage === totalPages || totalPages <= 1 || products.length === 0 || isAnimating
+                    currentPage === totalPages || totalPages <= 1 || (isEditing ? getPaginatedExistingStagedProducts().length === 0 && currentVisibleNewProducts.length === 0 && currentPage === totalPages : products.length === 0) || isAnimating || isPaginating
                       ? 'text-gray-400 cursor-not-allowed'
                       : 'text-emerald-700 hover:bg-emerald-50'
                   }`}
                   onClick={handleNextPage}
-                  disabled={currentPage === totalPages || totalPages <= 1 || products.length === 0 || isAnimating}
+                  disabled={currentPage === totalPages || totalPages <= 1 || (isEditing ? getPaginatedExistingStagedProducts().length === 0 && currentVisibleNewProducts.length === 0 && currentPage === totalPages : products.length === 0) || isAnimating || isPaginating}
                 >
                   <span className="mr-1 hidden px1100:inline-block text-xs md:text-sm">Next</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </button>
               </div>
+              {error && isEditing && <p className="text-red-500 text-xs text-center pb-1">{error}</p>}
             </div>
           </div>
         </motion.div>
