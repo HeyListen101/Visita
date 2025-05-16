@@ -1,25 +1,22 @@
+// map-search-context.tsx
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 
-// Define the context type
 type MapSearchContextType = {
   selectedStoreId: string | null;
-  setSelectedStoreId: (id: string | null) => void;
+  setSelectedStoreId: (id: string | null, selectionOrigin: 'map' | 'search' | 'other') => void; // Added origin
   storeName: string | null;
   setStoreName: (name: string | null) => void;
   isOpen: boolean | null;
   setIsOpen: (isOpen: boolean | null) => void;
   selectedProductName: string | null;
   setSelectedProductName: (name: string | null) => void;
-  // Add a flag to prevent event dispatch when selection comes from map component
-  isMapSelectionInProgress: boolean;
-  setIsMapSelectionInProgress: (inProgress: boolean) => void;
-  // Add a flag to prevent event handling in the map component
-  isEventDispatchInProgress: boolean;
+  // Flag to indicate the origin of the most recent selection
+  // This can be read by listeners if they need to behave differently.
+  lastSelectionOrigin: 'map' | 'search' | 'other' | null;
 };
 
-// Create the context with default values
 const MapSearchContext = createContext<MapSearchContextType>({
   selectedStoreId: null,
   setSelectedStoreId: () => {},
@@ -29,85 +26,76 @@ const MapSearchContext = createContext<MapSearchContextType>({
   setIsOpen: () => {},
   selectedProductName: null,
   setSelectedProductName: () => {},
-  isMapSelectionInProgress: false,
-  setIsMapSelectionInProgress: () => {},
-  isEventDispatchInProgress: false,
+  lastSelectionOrigin: null,
 });
 
-// Custom hook to use the context
 export const useMapSearch = () => useContext(MapSearchContext);
 
-// Provider component
 export const MapSearchProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [selectedStoreIdState, setSelectedStoreIdState] = useState<string | null>(null);
-  const [storeName, setStoreName] = useState<string | null>(null);
-  const [isOpen, setIsOpen] = useState<boolean | null>(null);
+  const [storeNameState, setStoreNameState] = useState<string | null>(null); // Renamed for clarity
+  const [isOpenState, setIsOpenState] = useState<boolean | null>(null);       // Renamed
   const [selectedProductName, setSelectedProductName] = useState<string | null>(null);
-  const [isMapSelectionInProgress, setIsMapSelectionInProgress] = useState<boolean>(false);
+  const [lastSelectionOrigin, setLastSelectionOrigin] = useState<'map' | 'search' | 'other' | null>(null);
   const isEventDispatchInProgressRef = useRef<boolean>(false);
 
-  // Create a custom event when store is selected from search
-  const handleSetSelectedStoreId = useCallback((id: string | null) => {
-    console.log("Context: handleSetSelectedStoreId called with:", id, "isMapSelectionInProgress:", isMapSelectionInProgress);
+  const handleSetSelectedStoreId = useCallback((id: string | null, selectionOrigin: 'map' | 'search' | 'other') => {
+    const currentSelectedStoreId = selectedStoreIdState; // Capture at call time
     
-    // First, update the state
+    console.log(`Context: setSelectedStoreId called. New ID: ${id}, Origin: ${selectionOrigin}, Current ID State: ${currentSelectedStoreId}`);
+
+    // Update the origin state immediately
+    setLastSelectionOrigin(selectionOrigin);
+
+    // Only proceed if the ID is actually changing
+    if (id === currentSelectedStoreId) {
+        console.log("Context: ID is the same as current state. No state change or event dispatch needed.");
+        return; 
+    }
+
     setSelectedStoreIdState(id);
 
     if (id === null) {
-      setStoreName(null);
-      setIsOpen(null);
+      setStoreNameState(null); // Use the specific state setter
+      setIsOpenState(null);   // Use the specific state setter
     }
-    
-    // Only dispatch event if:
-    // 1. Not from map component
-    // 2. ID is different from current
-    // 3. ID is not null
-    // 4. Not already dispatching an event
+    // Note: setStoreName and setIsOpen will be called by components listening to the event,
+    // or by the component that initiated the selection (e.g., SearchBar fetching store details).
+    // The context primarily manages the ID and dispatches the event.
+
     if (
       typeof window !== 'undefined' && 
-      id !== null && 
-      !isMapSelectionInProgress && 
-      id !== selectedStoreIdState &&
+      id !== null && // Only dispatch for actual selections, not deselection (null)
       !isEventDispatchInProgressRef.current
     ) {
-      console.log("Context: Dispatching 'storeSelected' event for:", id);
-      
-      // Set flag to prevent recursive event handling
+      console.log(`Context: Dispatching 'storeSelected' event for ID: ${id}, Origin: ${selectionOrigin}`);
       isEventDispatchInProgressRef.current = true;
       
-      // Dispatch the event
       const storeSelectedEvent = new CustomEvent('storeSelected', {
-        detail: { storeId: id }
+        detail: { storeId: id, origin: selectionOrigin } // Pass origin in event detail
       });
       window.dispatchEvent(storeSelectedEvent);
       
-      // Reset the flag after a short delay to ensure event handling is complete
       setTimeout(() => {
         isEventDispatchInProgressRef.current = false;
       }, 0);
     }
-
-    // Reset the map selection flag if it was set
-    if (isMapSelectionInProgress) {
-      console.log("Context: Resetting isMapSelectionInProgress to false");
-      setIsMapSelectionInProgress(false);
-    }
-  }, [isMapSelectionInProgress, selectedStoreIdState]);
+  }, [selectedStoreIdState]); // Removed other state setters from deps, they are handled by listeners
   
   return (
     <MapSearchContext.Provider
       value={{
         selectedStoreId: selectedStoreIdState,
         setSelectedStoreId: handleSetSelectedStoreId,
-        storeName,
-        setStoreName,
-        isOpen,
-        setIsOpen,
+        storeName: storeNameState,
+        setStoreName: setStoreNameState, // Provide direct setters for components that need them
+        isOpen: isOpenState,
+        setIsOpen: setIsOpenState,       // Provide direct setters
         selectedProductName,
         setSelectedProductName,
-        isMapSelectionInProgress,
-        setIsMapSelectionInProgress,
-        isEventDispatchInProgress: isEventDispatchInProgressRef.current
+        lastSelectionOrigin,
+        // No longer need to expose isMapSelectionInProgress or setIsMapSelectionInProgress from context
+        // isEventDispatchInProgress is internal to this provider
       }}
     >
       {children}

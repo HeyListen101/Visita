@@ -14,6 +14,12 @@ export const metadata = {
   description: "Go to the market without even going to the market!",
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1.0,
+  userScalable: 'yes',
+}
+
 export default function RootLayout({
   children,
 } : {

@@ -154,8 +154,8 @@ export const SearchBar = () => {
       const store = await fetchStoreData(storeId);
       if (store) {
         setStoreName(store.name || result.storeName);
+        setSelectedStoreId(store.storeid, store.name);
         setIsOpen(store.storestatus?.isopen || false);
-        setSelectedStoreId(store.storeid);
       }
     } catch (error) {
       console.log('Error processing result:', error);
@@ -273,3 +273,5 @@ export const SearchBar = () => {
     </>
   );
 };
+
+export default SearchBar;

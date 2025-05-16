@@ -78,7 +78,7 @@ export default async function AuthButton() {
             <DropdownMenuItem asChild className="rounded-sm px-3 py-2 text-sm hover:bg-red-50 cursor-pointer">
               <div className="flex items-center gap-2 text-red-600 w-full">
                 <LogOut size={16} />
-                <button type="submit" className="text-sm font-normal">Sign out</button>
+                <button aria-label="log-out" type="submit" className="text-sm font-normal">Sign out</button>
               </div>
             </DropdownMenuItem>
           </form>
@@ -87,10 +87,10 @@ export default async function AuthButton() {
     </div>
   ) : (
     <div className="flex gap-2">
-      <Button asChild size="default" variant={"outline"}>
+      <Button asChild size="default" variant={"outline"} aria-label="sign-in">
         <Link href="/sign-in">Sign in</Link>
       </Button>
-      <Button asChild size="default" variant={"default"}>
+      <Button asChild size="default" variant={"default"} aria-label="sign-up">
         <Link href="/sign-up">Sign up</Link>
       </Button>
     </div>
