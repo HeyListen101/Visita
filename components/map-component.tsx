@@ -8,7 +8,7 @@ import { createClient } from "@/utils/supabase/client";
 import { mapData } from './assets/background-images/map';
 import React, { useState, useEffect, useRef } from 'react';
 import { useMapSearch } from '@/components/map-search-context';
-import { mapIconData, color } from '@/components/assets/background-images/icons';
+import { colors } from '@/components/assets/background-images/map';
 
 
 type TooltipPosition = 'top' | 'right' | 'bottom' | 'left';
@@ -20,7 +20,19 @@ type Store = {
   name: string;
   datecreated: string;
   isarchived: boolean;
-}
+};
+
+type MapBlockData = {
+  rowStart: number;
+  rowEnd: number;
+  colStart: number;
+  colEnd: number;
+  defaultColor: string;
+  viewBox: string;
+  icon: string;
+  storeId: string | null;
+  tooltipPosition?: TooltipPosition; // Added tooltipPosition property
+};
 
 export default function MapComponent() {
   const supabase = createClient();
@@ -164,7 +176,7 @@ export default function MapComponent() {
       // If the event originated from the map itself, MapComponent already handled it in handleMapBlockClick.
       // Or, if the ID is already the current one.
       if (origin === 'map' || newStoreIdFromEvent === selectedStoreId) {
-        console.log("MapComponent: Ignoring 'storeSelected' event (origin is map or ID unchanged).");
+      const selectedBlock = mapData.find((block: MapBlockData) => block.storeId === newStoreIdFromEvent);
         return;
       }
 
@@ -184,8 +196,13 @@ export default function MapComponent() {
           colStart: selectedBlock.colStart,
           colEnd: selectedBlock.colEnd,
         });
-        if (selectedBlock.position) { // Assuming block has a position for tooltip
-            handleToolTipPositionChange(selectedBlock.position as TooltipPosition);
+        if ('tooltipPosition' in selectedBlock && selectedBlock.tooltipPosition) { // Check if tooltipPosition exists
+            // Calculate tooltip position based on block location
+            const position = 
+              selectedBlock.rowStart <= 5 ? 'bottom' :
+              selectedBlock.colStart >= 35 ? 'left' :
+              selectedBlock.colStart <= 5 ? 'right' : 'top';
+            handleToolTipPositionChange(position);
         }
       } else {
         setSelectedBlockCoords({}); // Clear if no block found (e.g. store not on map)
@@ -318,15 +335,15 @@ export default function MapComponent() {
           }}
         >
         {/* Roads and Walkways */}
-        <MapBlock rowStart={1} rowEnd={22} colStart={18} colEnd={19} defaultColor={color.f} pointerEvents={false}/>
-        <MapBlock rowStart={3} rowEnd={4} colStart={4} colEnd={19} height={30} defaultColor={color.f} pointerEvents={false}/>
-        <MapBlock rowStart={3} rowEnd={5} colStart={18} colEnd={38} height={50} defaultColor={color.f} pointerEvents={false}/>
-        <MapBlock rowStart={4} rowEnd={22} colStart={37} colEnd={38} defaultColor={color.f} pointerEvents={false}/>
-        <MapBlock rowStart={5} rowEnd={21} colStart={24} colEnd={25} width={30} defaultColor={color.f} pointerEvents={false}/>
-        <MapBlock rowStart={13} rowEnd={21} colStart={33} colEnd={34} width={30} defaultColor={color.f} pointerEvents={false}/>
-        <MapBlock rowStart={13} rowEnd={18} colStart={36} colEnd={37} width={30} defaultColor={color.f} pointerEvents={false}/>
-        <MapBlock rowStart={17} rowEnd={18} colStart={24} colEnd={37} height={30} defaultColor={color.f} pointerEvents={false}/>
-        <MapBlock rowStart={20} rowEnd={21} colStart={24} colEnd={34} height={30} defaultColor={color.f} pointerEvents={false}/>
+        <MapBlock rowStart={1} rowEnd={22} colStart={18} colEnd={19} defaultColor={colors.f} pointerEvents={false}/>
+        <MapBlock rowStart={3} rowEnd={4} colStart={4} colEnd={19} height={30} defaultColor={colors.f} pointerEvents={false}/>
+        <MapBlock rowStart={3} rowEnd={5} colStart={18} colEnd={38} height={50} defaultColor={colors.f} pointerEvents={false}/>
+        <MapBlock rowStart={4} rowEnd={22} colStart={37} colEnd={38} defaultColor={colors.f} pointerEvents={false}/>
+        <MapBlock rowStart={5} rowEnd={21} colStart={24} colEnd={25} width={30} defaultColor={colors.f} pointerEvents={false}/>
+        <MapBlock rowStart={13} rowEnd={21} colStart={33} colEnd={34} width={30} defaultColor={colors.f} pointerEvents={false}/>
+        <MapBlock rowStart={13} rowEnd={18} colStart={36} colEnd={37} width={30} defaultColor={colors.f} pointerEvents={false}/>
+        <MapBlock rowStart={17} rowEnd={18} colStart={24} colEnd={37} height={30} defaultColor={colors.f} pointerEvents={false}/>
+        <MapBlock rowStart={20} rowEnd={21} colStart={24} colEnd={34} height={30} defaultColor={colors.f} pointerEvents={false}/>
         
         {/* Map all store blocks from mapData */}
         {mapData.map((block, index) => (
