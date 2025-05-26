@@ -1,5 +1,5 @@
-import BackgroundImage from '@/components/assets/background-images/Background.png';
 import { motion } from "motion/react"
+import BackgroundImage from '@/components/assets/background-images/Background.png';
 
 export default function VisitaPlaceholder() {
   return (
